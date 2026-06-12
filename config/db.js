@@ -1,20 +1,22 @@
 // backend/config/db.js
 // Koneksi pool MySQL — dipakai di semua route
 
-const mysql = require('mysql2/promise');
-require('dotenv').config();
+const mysql = require('mysql2');
+require('dotenv').config(); // Sangat penting agar file .env terbaca saat di laptop
 
 const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT) || 3306,
+  // Jika process.env.DB_HOST tidak terbaca, dia akan memakai cadangan di sebelah kanan (||)
+  host: process.env.DB_HOST,
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'voiz_db',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'railway',
+  port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
-  timezone: '+07:00',
-  charset: 'utf8mb4',
+  queueLimit: 0,
 });
+
+module.exports = pool.promise();
 
 // Test koneksi saat server start
 (async () => {
