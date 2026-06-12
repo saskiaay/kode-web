@@ -2,7 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const db = require('./config/db'); // Impor koneksi database
+const db = require('./config/db');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -16,6 +16,10 @@ app.get('/api/test-db', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ message: 'Database terkoneksi dengan sukses!' });
   });
+});
+
+app.get('/', (req, res) => {
+  res.send('<h1>Voiz API Server Aktif!</h1><p>Gunakan /api/... untuk mengakses endpoint.</p>');
 });
 
 // PENTING: Jika error 'index.html' muncul, pastikan Anda punya folder 'public'
