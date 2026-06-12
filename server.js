@@ -1,12 +1,10 @@
 // backend/server.js
-// Entry point — Voiz API Server
-
 require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const rateLimit = require('express-rate-limit');
-const path = require('path'); // Tambahan untuk akses folder
 
 const authRoutes = require('./routes/authRoutes');
 const aspirasiRoutes = require('./routes/aspirasiRoutes');
@@ -16,79 +14,42 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ── FUNGSI STATIS (MENAMPILKAN HTML/CSS/JS) ───────────────
-// Ini agar file HTML di luar folder backend bisa diakses
+// 1. IZINKAN FILE STATIS (HTML, CSS, JS)
+// Karena server.js di dalam /backend, kita naik satu tingkat (../) ke folder utama
 app.use(express.static(path.join(__dirname, '../'))); 
 
-// ── CORS ──────────────────────────────────────────────────
-app.use(
-  cors({
-    origin: '*', // Diizinkan untuk semua akses dari web kamu
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  })
-);
-
-// ── Body Parser ───────────────────────────────────────────
+// 2. MIDDLEWARE
+app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ── Rate Limit ────────────────────────────────────────────
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  message: { success: false, message: 'Terlalu banyak request.' },
-});
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: { success: false, message: 'Terlalu banyak percobaan login.' },
-});
-
+// 3. RATE LIMITING
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
 app.use('/api/', limiter);
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
 
-// ── Routes API ────────────────────────────────────────────
+// 4. ROUTE API
 app.use('/api/auth', authRoutes);
 app.use('/api/aspirasi', aspirasiRoutes);
 app.use('/api/kategori', aspirasiRoutes);
 app.use('/api/voting', votingRoutes);
 app.use('/api/admin', adminRoutes);
 
-// ── Health Check ──────────────────────────────────────────
-app.get('/api/health', (_req, res) => {
-  res.json({ success: true, message: 'Voiz API berjalan!', time: new Date().toISOString() });
+// 5. ROUTE FRONTEND (TAMPILAN WEB)
+// Mengarahkan ke index.html di folder utama (di luar backend)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
 });
 
-// ── RUTE FRONTEND (TAMPILAN WEB) ──────────────────────────
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, '../index.html'));
-});
-
+// Menangani file HTML lain seperti dashboard.html, admin.html
 app.get('/:page', (req, res) => {
-  res.sendFile(path.join(__dirname, '../' + req.params.page));
+    res.sendFile(path.join(__dirname, '../' + req.params.page));
 });
 
-// ── 404 (Hanya untuk API yang tidak ketemu) ───────────────
+// 6. ERROR HANDLING
 app.use((_req, res) => {
-  res.status(404).json({ success: false, message: 'Endpoint API tidak ditemukan.' });
+    res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan.' });
 });
 
-// ── Error Handler ─────────────────────────────────────────
-app.use((err, _req, res, _next) => {
-  console.error('[SERVER ERROR]', err);
-  res.status(500).json({ success: false, message: 'Internal server error.' });
-});
-
-// ── Start ─────────────────────────────────────────────────
 app.listen(PORT, () => {
-  console.log(`
-╔══════════════════════════════════╗
-║   🎤  VOIZ API — Aktif           ║
-║   Port    : ${PORT}                ║
-╚══════════════════════════════════╝
-  `);
+    console.log(`Server aktif di port ${PORT}`);
 });
-
-module.exports = app;
