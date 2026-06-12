@@ -1,36 +1,21 @@
-// backend/config/db.js
-// Koneksi pool MySQL — dipakai di semua route
-
+// backend/db.js
 const mysql = require('mysql2');
 require('dotenv').config();
 
-const dbConfig = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME || 'railway',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  waitForConnections: true,
-  connectionLimit: 5,
-  queueLimit: 0,
-  connectTimeout: 10000,
-};
+const connection = mysql.createConnection({
+  host: process.env.MYSQLHOST,
+  user: process.env.MYSQLUSERS,
+  password: process.env.MYSQLPASSWORD,
+  database: process.env.MYSQLDATABASE,
+  port: process.env.MYSQLPORT || 3306,
+});
 
-// 1. Buat pool koneksi
-const pool = mysql.createPool(dbConfig);
+connection.connect((err) => {
+  if (err) {
+    console.error('Gagal konek database: ' + err.message);
+    return;
+  }
+  console.log('Berhasil terhubung ke database MySQL');
+});
 
-// 2. Ambil versi promise-nya untuk dipakai async/await di file routes
-const promisePool = pool.promise();
-
-// 3. Tes koneksi yang aman (Anti-Crash)
-promisePool.query('SELECT 1')
-  .then(() => {
-    console.log(`✅ Database terhubung ke: ${dbConfig.database}`);
-  })
-  .catch((err) => {
-    console.error('❌ Gagal konek database:', err.message);
-    // Tidak memakai process.exit(1) agar server tidak dipaksa mati
-  });
-
-// 4. Cukup ekspor promisePool SATU KALI saja di paling bawah
-module.exports = promisePool;
+module.exports = connection;
