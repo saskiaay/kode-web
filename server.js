@@ -6,6 +6,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const path = require('path'); // Tambahan untuk akses folder
 
 const authRoutes = require('./routes/authRoutes');
 const aspirasiRoutes = require('./routes/aspirasiRoutes');
@@ -15,14 +16,14 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ── FUNGSI STATIS (MENAMPILKAN HTML/CSS/JS) ───────────────
+// Ini agar file HTML di luar folder backend bisa diakses
+app.use(express.static(path.join(__dirname, '../'))); 
+
 // ── CORS ──────────────────────────────────────────────────
 app.use(
   cors({
-    origin: [
-      process.env.CLIENT_URL || 'http://127.0.0.1:5500',
-      'http://localhost:5500',
-      'http://127.0.0.1:5500',
-    ],
+    origin: '*', // Diizinkan untuk semua akses dari web kamu
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
@@ -36,7 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
-  message: { success: false, message: 'Terlalu banyak request. Tunggu sebentar.' },
+  message: { success: false, message: 'Terlalu banyak request.' },
 });
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -48,10 +49,10 @@ app.use('/api/', limiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 
-// ── Routes ────────────────────────────────────────────────
+// ── Routes API ────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/aspirasi', aspirasiRoutes);
-app.use('/api/kategori', aspirasiRoutes); // /api/kategori juga dari sini
+app.use('/api/kategori', aspirasiRoutes);
 app.use('/api/voting', votingRoutes);
 app.use('/api/admin', adminRoutes);
 
@@ -60,9 +61,18 @@ app.get('/api/health', (_req, res) => {
   res.json({ success: true, message: 'Voiz API berjalan!', time: new Date().toISOString() });
 });
 
-// ── 404 ───────────────────────────────────────────────────
+// ── RUTE FRONTEND (TAMPILAN WEB) ──────────────────────────
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, '../index.html'));
+});
+
+app.get('/:page', (req, res) => {
+  res.sendFile(path.join(__dirname, '../' + req.params.page));
+});
+
+// ── 404 (Hanya untuk API yang tidak ketemu) ───────────────
 app.use((_req, res) => {
-  res.status(404).json({ success: false, message: 'Endpoint tidak ditemukan.' });
+  res.status(404).json({ success: false, message: 'Endpoint API tidak ditemukan.' });
 });
 
 // ── Error Handler ─────────────────────────────────────────
@@ -75,10 +85,8 @@ app.use((err, _req, res, _next) => {
 app.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════╗
-║   🎤  VOIZ API — Aktif          ║
+║   🎤  VOIZ API — Aktif           ║
 ║   Port    : ${PORT}                ║
-║   Mode    : ${process.env.NODE_ENV || 'development'}            ║
-║   Client  : ${process.env.CLIENT_URL || 'http://127.0.0.1:5500'} ║
 ╚══════════════════════════════════╝
   `);
 });
