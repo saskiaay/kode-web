@@ -2,7 +2,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const db = require('./db'); // Impor koneksi database
+const db = require('./config/db'); // Impor koneksi database
 
 const app = express();
 const PORT = process.env.PORT || 5000;
