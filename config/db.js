@@ -16,42 +16,21 @@ const dbConfig = {
   connectTimeout: 10000,
 };
 
+// 1. Buat pool koneksi
 const pool = mysql.createPool(dbConfig);
 
+// 2. Ambil versi promise-nya untuk dipakai async/await di file routes
 const promisePool = pool.promise();
 
-promisePool
-  .query('SELECT 1')
+// 3. Tes koneksi yang aman (Anti-Crash)
+promisePool.query('SELECT 1')
   .then(() => {
-    console.log(`✅ Database terhubung: ${dbConfig.database}`);
+    console.log(`✅ Database terhubung ke: ${dbConfig.database}`);
   })
   .catch((err) => {
     console.error('❌ Gagal konek database:', err.message);
+    // Tidak memakai process.exit(1) agar server tidak dipaksa mati
   });
 
+// 4. Cukup ekspor promisePool SATU KALI saja di paling bawah
 module.exports = promisePool;
-
-pool.getConnection((err, connection) => {
-  if (err) {
-    console.error('❌ Gagal konek database:', err.message);
-  } else {
-    console.log(`✅ Database terhubung: ${dbConfig.database}`);
-    connection.release();
-  }
-});
-
-module.exports = pool.promise();
-
-// Test koneksi saat server start
-(async () => {
-  try {
-    const conn = await pool.getConnection();
-    console.log('✅  Database terhubung:', process.env.DB_NAME || 'voiz_db');
-    conn.release();
-  } catch (err) {
-    console.error('❌  Gagal konek database:', err.message);
-    process.exit(1);
-  }
-})();
-
-module.exports = pool;
