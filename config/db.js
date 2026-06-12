@@ -4,12 +4,11 @@
 const mysql = require('mysql2');
 require('dotenv').config();
 
-// Konfigurasi database yang sinkron dengan Railway
 const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME || 'railway', // Otomatis mengarah ke 'railway'
+  database: process.env.DB_NAME || 'railway',
   port: parseInt(process.env.DB_PORT || '3306'),
   waitForConnections: true,
   connectionLimit: 5,
@@ -18,6 +17,19 @@ const dbConfig = {
 };
 
 const pool = mysql.createPool(dbConfig);
+
+const promisePool = pool.promise();
+
+promisePool
+  .query('SELECT 1')
+  .then(() => {
+    console.log(`✅ Database terhubung: ${dbConfig.database}`);
+  })
+  .catch((err) => {
+    console.error('❌ Gagal konek database:', err.message);
+  });
+
+module.exports = promisePool;
 
 pool.getConnection((err, connection) => {
   if (err) {
