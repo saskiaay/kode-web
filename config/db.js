@@ -4,19 +4,28 @@
 const mysql = require('mysql2');
 require('dotenv').config();
 
-const isProduction =
-  process.env.NODE_ENV === 'production' || process.env.DB_HOST?.includes('railway');
-
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || '127.0.0.1', 
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'railway',
+// Konfigurasi database yang sinkron dengan Railway
+const dbConfig = {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'railway', // Otomatis mengarah ke 'railway'
   port: parseInt(process.env.DB_PORT || '3306'),
   waitForConnections: true,
-  connectionLimit: isProduction ? 5 : 10, 
+  connectionLimit: 5,
   queueLimit: 0,
   connectTimeout: 10000,
+};
+
+const pool = mysql.createPool(dbConfig);
+
+pool.getConnection((err, connection) => {
+  if (err) {
+    console.error('❌ Gagal konek database:', err.message);
+  } else {
+    console.log(`✅ Database terhubung: ${dbConfig.database}`);
+    connection.release();
+  }
 });
 
 module.exports = pool.promise();
