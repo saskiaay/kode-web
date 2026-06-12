@@ -2,18 +2,22 @@
 // Koneksi pool MySQL — dipakai di semua route
 
 const mysql = require('mysql2');
-require('dotenv').config(); // Sangat penting agar file .env terbaca saat di laptop
+require('dotenv').config();
+
+// Mencegah error ECONNREFUSED saat di Railway dengan mengecek DB_HOST
+const isProduction =
+  process.env.NODE_ENV === 'production' || process.env.DB_HOST?.includes('railway');
 
 const pool = mysql.createPool({
-  // Jika process.env.DB_HOST tidak terbaca, dia akan memakai cadangan di sebelah kanan (||)
-  host: process.env.DB_HOST,
+  host: process.env.DB_HOST || '127.0.0.1', // Pakai 127.0.0.1 (IPv4) jika localhost agar tidak terbaca ::1
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD,
+  password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'railway',
-  port: process.env.DB_PORT || 3306,
+  port: parseInt(process.env.DB_PORT || '3306'),
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: isProduction ? 5 : 10, // Menyesuaikan limit koneksi di cloud
   queueLimit: 0,
+  connectTimeout: 10000,
 });
 
 module.exports = pool.promise();
